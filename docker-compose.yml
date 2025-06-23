@@ -1,5 +1,28 @@
-version: '3'
+# version: '3'
+# services:
+#   app:
+#     build: .
+#     container_name: node_app
+
+
+version: '3.8'
+
 services:
   app:
     build: .
-    container_name: node_app
+    container_name: my-node-app
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+    command: npm start
+    environment:
+      - NODE_ENV=production
+
+  # Optional: A testing container (you can add this if needed)
+  test:
+    image: my-node-app:latest
+    container_name: my-node-app-test
+    command: npm test
+    depends_on:
+      - app
