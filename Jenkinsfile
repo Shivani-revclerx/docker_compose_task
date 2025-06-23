@@ -1,37 +1,58 @@
 pipeline {
-  agent any
+    agent any
 
-  stages {
-    stage('Checkout') {
-      steps {
-        git 'https://github.com/Shivani-revclerx/docker_compose_task.git'
-      }
+    environment {
+        DOCKER_COMPOSE_FILE = 'docker-compose.yml'
     }
-    stage('Build Docker Image') {
-      steps {
-        sh 'docker build -t my-node-app:latest .'
-      }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    // Build the Docker image using the Dockerfile
+                    sh 'docker build -t test-app:latest .'
+                }
+            }
+        }
+
+        stage('Docker Compose Up') {
+            steps {
+                script {
+                    // Start the containers in detached mode
+                    sh 'docker-compose -f ${DOCKER_COMPOSE_FILE} up -d'
+                }
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                script {
+                    // Here, we're simply checking if the app is running by hitting the homepage.
+                    sh "curl --silent --fail http://localhost:3000/ || exit 1"
+                }
+            }
+        }
+
+        stage('Tear Down') {
+            steps {
+                script {
+                    // Stop and remove the containers
+                    sh 'docker-compose -f ${DOCKER_COMPOSE_FILE} down'
+                }
+            }
+        }
     }
-    stage('Start Containers') {
-      steps {
-        sh 'docker-compose up -d'
-      }
-    }
-    stage('Run Tests') {
-      steps {
-        sh 'docker-compose exec app npm test'
-      }
-    }
-    stage('Teardown') {
-      steps {
-        sh 'docker-compose down'
-      }
-    }
-  }
-  post {
+
+    post {
         always {
-            // Cleanup containers, networks, and volumes after each run
-            sh 'docker-compose down'
+            // Cleanup even if the build fails
+            sh 'docker-compose -f ${DOCKER_COMPOSE_FILE} down'
         }
     }
 }

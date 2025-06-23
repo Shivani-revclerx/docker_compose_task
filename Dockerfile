@@ -1,45 +1,27 @@
-# FROM node:18 AS builder
-# WORKDIR /app
-# COPY package*.json ./
-# RUN npm install
-# COPY . .
-# RUN npm run build || echo "skip build"
+# Stage 1: Builder Stage
+FROM node:16 AS builder
 
-# FROM node:18-alpine
-# WORKDIR /app
-# COPY --from=builder /app .
-# CMD ["node", "index.js"]
-
-
-
-
-
-# # this file is for Multi-stage build..........................
-
-# Step 1: Builder stage (build the app)
-FROM node:18 AS builder
-
-# Set working directory inside the container
+# Set working directory
 WORKDIR /app
 
-# Copy package.json and package-lock.json for dependencies installation
-COPY package.json package-lock.json ./
+# Copy package.json and install dependencies
+COPY package.json yarn.lock ./
 RUN npm install
 
 # Copy the rest of the application code
 COPY . .
 
-# Step 2: Runtime stage (build the runtime image)
-FROM node:18-slim AS runtime
+# Stage 2: Runtime Stage
+FROM node:16-slim
 
-# Set the working directory for the runtime environment
+# Set working directory
 WORKDIR /app
 
-# Copy only necessary files from the builder stage (node_modules and dist)
+# Copy only the necessary artifacts from the builder stage
 COPY --from=builder /app /app
 
-# Expose the port on which the app runs
+# Expose the application port
 EXPOSE 3000
 
-# Set the command to run the app in production
-CMD ["npm", "start"]
+# Start the application
+CMD ["node", "index.js"]
