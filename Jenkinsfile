@@ -1,21 +1,17 @@
 pipeline {
     agent any
 
-    environment {
-        DOCKER_COMPOSE_FILE = 'docker-compose.yml'
-    }
-
     stages {
         stage('Checkout') {
             steps {
-                checkout scm
+                git branch: 'main', url: 'https://github.com/Shivani-revclerx/docker_compose_task.git'
             }
         }
 
         stage('Build Docker Image') {
             steps {
                 script {
-                    // Build the Docker image using the Dockerfile
+                    echo "Building Docker Image"
                     sh 'docker build -t test-app:latest .'
                 }
             }
@@ -24,8 +20,8 @@ pipeline {
         stage('Docker Compose Up') {
             steps {
                 script {
-                    // Start the containers in detached mode
-                    sh 'docker-compose -f ${DOCKER_COMPOSE_FILE} up -d'
+                    echo "Starting containers with docker-compose"
+                    sh "docker-compose -f docker-compose.yml up -d"
                 }
             }
         }
@@ -33,7 +29,7 @@ pipeline {
         stage('Run Tests') {
             steps {
                 script {
-                    // Here, we're simply checking if the app is running by hitting the homepage.
+                    echo "Running tests"
                     sh "curl --silent --fail http://localhost:3000/ || exit 1"
                 }
             }
@@ -42,8 +38,8 @@ pipeline {
         stage('Tear Down') {
             steps {
                 script {
-                    // Stop and remove the containers
-                    sh 'docker-compose -f ${DOCKER_COMPOSE_FILE} down'
+                    echo "Tearing down containers"
+                    sh "docker-compose -f docker-compose.yml down"
                 }
             }
         }
@@ -52,7 +48,8 @@ pipeline {
     post {
         always {
             // Cleanup even if the build fails
-            sh 'docker-compose -f ${DOCKER_COMPOSE_FILE} down'
+            echo "Post-build cleanup"
+            sh "docker-compose -f docker-compose.yml down || true"
         }
     }
 }
